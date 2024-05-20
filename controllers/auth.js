@@ -9,9 +9,9 @@ router.get('/sign-up', (req, res) => {
 })
 
 router.post('/sign-up', async (req, res) => {
-// user will send us the username, password and passwordConfirmation
+    // User will send us the username, password and passwordConfirmation
     // - check if the username is already taken
-    const userInDatabase = await User.findOne({ username: req.body.username})
+    const userInDatabase = await User.findOne({ username: req.body.username })
     if (userInDatabase) {
         return res.send('Username already taken')
     }
@@ -36,6 +36,38 @@ router.post('/sign-up', async (req, res) => {
     const user = await User.create(req.body)
     res.send(`Thanks for signing up ${user.username}`)
 
+})
+
+router.get('/sign-in', async (req, res) => {
+    res.render('auth/sign-in.ejs')
+})
+
+router.post('/sign-in', async (req, res) => {
+    // User will send us the username and password
+    const userInDatabase = await User.findOne({ username: req.body.username })
+
+    // - check if user exists
+    if (!userInDatabase) {
+        return res.send('Login failed. Please try again.')
+    }
+
+    // - check if password is correct
+    const validPassword = bcrypt.compareSync(req.body.password, userInDatabase.password)
+
+    if (!validPassword) {
+        return res.send('Login failed. Please try again.')
+    }
+
+    req.session.user = {
+        username: userInDatabase.username
+    }
+    console.log('user is valid and gets a session', req.session)
+    res.redirect('/')
+})
+
+router.get('/sign-out', async (req, res) => {
+    req.session.destroy()
+    res.redirect('/')
 })
 
 module.exports = router

@@ -1,7 +1,14 @@
+// Make environment variables available to the app
 const dotenv = require('dotenv')
 dotenv.config()
+
+// Import express and create instance of the app
 const express = require('express')
 const app = express()
+
+// Import express-session to manage user sessions
+const session = require('express-session')
+
 const mongoose = require('mongoose')
 const methodOverride = require('method-override')
 const morgan = require('morgan')
@@ -25,16 +32,31 @@ app.use(express.urlencoded({ extended: false }))
 app.use(methodOverride('_method'))
 // Morgan for logging HTTP requests
 app.use(morgan('dev'))
+// Use sessions for auth
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+}))
 
 // Use the auth controller for any requests that start with /auth
 app.use('/auth', authController)
 
 // Set up route for GET request
 app.get('/', async (req,res) => {
-    res.render('index.ejs')
+    res.render('index.ejs', {
+        user: req.session.user
+    })
 })
 
-
+// Route handler for /vip-lounge requests
+app.get('/vip-lounge', (req, res) => {
+    if (req.session.user) {
+        res.send(`Welcome to the VIP lounge ${req.session.user.username}`)
+    } else {
+        res.send('No guests allowed')
+    }
+})
 
 // Listen for incoming requests
 app.listen(port, () => {
